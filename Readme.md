@@ -1,4 +1,4 @@
-# 🛡️ RamSentinel v1.0.0 — Documentation Technique Avancée (Édition Portable)
+# 🛡️ RamSentinel v1.1.0 — Documentation Technique Avancée (Édition Portable)
 
 **RamSentinel** n'est pas un simple "RAM Cleaner". C'est un orchestrateur de ressources de bas niveau conçu pour les ingénieurs système et les utilisateurs exigeants. Il agit comme une interface directe avec le **Memory Manager (VMM)** de Windows, utilisant des primitives système privilégiées pour forcer la réallocation des pages physiques sans les instabilités liées aux méthodes de purge classiques.
 
