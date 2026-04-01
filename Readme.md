@@ -1,136 +1,337 @@
-# 🛡️ RamSentinel v1.1.0 — Documentation Technique Avancée (Édition Portable)
+# RamSentinel v1.1.1
 
-**RamSentinel** n'est pas un simple "RAM Cleaner". C'est un orchestrateur de ressources de bas niveau conçu pour les ingénieurs système et les utilisateurs exigeants. Il agit comme une interface directe avec le **Memory Manager (VMM)** de Windows, utilisant des primitives système privilégiées pour forcer la réallocation des pages physiques sans les instabilités liées aux méthodes de purge classiques.
+![Version](https://img.shields.io/badge/version-1.1.1-blue) ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen) ![License](https://img.shields.io/badge/license-MIT-green)
 
----
+## Guide utilisateur
 
-## 🧬 Architecture Interne & Portabilité
-
-Cette build est un exécutable **Single-File Self-Contained**. 
-- **Runtime-Less** : Le CLR .NET 8 est virtualisé et embarqué. Aucune installation de dépendance n'est requise.
-- **Native Bridge** : La logique de calcul est déportée dans une couche C++ hautement optimisée, liée statiquement pour éviter les dépendances au MSVC Redistributable.
-- **Zero-Footprint** : Aucun service n'est installé. L'application réside entièrement en mémoire après le chargement.
+Ce document est le manuel utilisateur de l'edition portable v1.1.1.
+Il decrit l'utilisation de l'executable, les actions disponibles, les fichiers crees sur la machine et la procedure de nettoyage apres intervention.
 
 ---
 
-## ⚙️ Mécanique d'Optimisation (Vecteurs d'Intervention)
+## Contenu du dossier portable
 
-RamSentinel manipule les listes de pages du noyau via des transitions d'état spécifiques :
+Le dossier portable contient normalement :
 
-### 1. Gestion du Working Set (Ensemble de travail)
-- **Fonction** : `RS_TrimProcessWorkingSet`
-- **Méthode** : Invoque `SetProcessWorkingSetSizeEx` avec les flags `QUOTA_LIMITS_HARDWS_MIN_DISABLE` et `QUOTA_LIMITS_HARDWS_MAX_DISABLE`.
-- **Action** : Force le VMM à vider les pages privées non-résidentes des processus vers la liste **Modified Page List**. Cela réduit l'empreinte physique sans suspendre l'exécution, permettant au système de réallouer ces cadres (frames) aux processus prioritaires.
+| Fichier | Role |
+|---|---|
+| `RamSentinel.exe` | Executable portable principal |
+| `SHA256.txt` | Hash SHA-256 de reference |
+| `RamSentinel.exe.sha256` | Hash au format exploitable avec outils de verification |
+| `Readme.md` | Manuel utilisateur |
 
-### 2. Auto-Purge Intelligent (Background Monitor)
-- **Logique** : Surveillance asynchrone du seuil de saturation du cache.
-- **Seuil Configurable** : Permet de définir une limite stricte (ex: 2.0 Go). Dès que la liste Standby dépasse cette valeur, une purge est déclenchée automatiquement.
-- **Optimisation Silencieuse** : Conçu pour fonctionner lorsque l'application est réduite, garantissant que la RAM est toujours prête avant même que l'utilisateur ne constate un ralentissement.
-- **Protection Thrashing** : Incorpore un cooldown de sécurité pour éviter les purges en boucle qui pourraient solliciter inutilement le processeur.
-
-### 3. Gestion Avancée des Listes de Pages (VMM)
-RamSentinel active le privilège `SeProfileSingleProcessPrivilege` pour accéder à `NtSetSystemInformation` :
-
-*   **Standby List (Cache de lecture)** : Contient des données déjà lues sur disque mais inutilisées. Bien qu'elle soit considérée comme "disponible" par Windows, une liste Standby trop volumineuse et fragmentée impose un coût processeur non négligeable lors de sa réallocation. La purge (`MemoryPurgeStandbyList`) bascule ces pages vers la liste **Free**, supprimant la latence de transition lors du lancement d'applications lourdes.
-*   **Modified List (Cache d'écriture)** : Contient des données modifiées en RAM qui n'ont pas encore été écrites sur le disque ou le fichier d'échange (Pagefile). Contrairement à la liste Standby, ces pages **ne peuvent pas** être réutilisées immédiatement par le système. RamSentinel utilise `MemoryFlushModifiedList` pour forcer l'écriture immédiate de ces pages, permettant leur passage en mode Standby puis Free.
-
-| État de la page | Utilisable immédiatement ? | Action RamSentinel |
-| :--- | :---: | :--- |
-| **Active** | Non | Trim (Working Set) |
-| **Modified** | **Non (Doit être écrite)** | **Flush (Forcer l'écriture)** |
-| **Standby** | Oui (mais avec latence) | **Purge (Instantanéisation)** |
-| **Free / Zero** | Oui | (Cible finale de l'optimisation) |
+Le dossier portable ne contient pas le code source ni les fichiers de build.
 
 ---
 
-## 📊 Intelligence Artificielle & Diagnostics
+## Prerequis
 
-### Algorithme de Pression (Multi-Vecteurs)
-Le score de pression n'est pas un simple ratio d'utilisation. Il est calculé sur une moyenne glissante :
-$$Score = (UsageRAM \times 0.60) + (UsagePagefile \times 0.25) + (CommitRatio \times 0.15)$$
-Cela permet de détecter une saturation de la **Commit Charge** (souvent invisible pour l'utilisateur) avant que le système ne commence à tuer des processus (OOM).
+- Windows 10 ou Windows 11 x64
+- Droits administrateur recommandes
+- Connexion Internet uniquement pour VirusTotal et l'ouverture des liens externes
 
-### Corrélation d'Événements (Event Logs)
-Le moteur surveille les journaux `System` et `Application` pour capturer en temps réel :
-- **Event ID 2004 (Resource-Exhaustion-Detector)** : Identification chirurgicale du processus responsable d'une fuite mémoire.
-- **Event ID 1000/1001 (Application Error)** : Corrélation entre un pic de pression et un crash applicatif pour diagnostic post-mortem.
+Sans elevation administrateur, certaines actions peuvent fonctionner partiellement ou renvoyer `Acces refuse`.
 
 ---
 
-## 🛡️ Sécurité et Analyse Forensique
+## Demarrage
 
-Le module VirusTotal utilise une approche sécurisée :
-1. **Hachage Local** : L'empreinte SHA-256 est générée localement. Le fichier n'est **jamais** envoyé sur internet.
-2. **Analyse de Réputation** : Seul le hash est comparé via l'API REST de VirusTotal.
-3. **Identification des Menaces** : Permet de distinguer un processus système légitime d'un mineur de crypto-monnaie ou d'un injecteur de code résidant en mémoire.
+1. Ouvrir le dossier portable.
+2. Lancer `RamSentinel.exe`.
+3. Si possible, utiliser `Executer en tant qu'administrateur`.
+4. Attendre le premier rafraichissement de la liste des processus.
 
----
+Au demarrage, l'application collecte :
 
-## 🔔 Système de Notifications (Tray)
-
-RamSentinel utilise le système de **Balloon Tips** de Windows pour communiquer de manière non-intrusive :
-- **Alertes Auto-Purge** : Une notification s'affiche lorsque le seuil de cache est atteint et qu'un nettoyage automatique est effectué en arrière-plan.
-- **Statut d'Optimisation** : Confirmation visuelle des gains de mémoire après une opération "Smart Optimize".
-- **Mode Discret** : L'application disparaît de la barre des tâches lors de la réduction pour se loger dans la zone de notification (System Tray).
+- l'etat global de la RAM
+- la liste des processus
+- le score de pression memoire
+- les alertes et evenements recents
 
 ---
 
-## 🚀 Spécifications de Déploiement
+## Interface
 
-### Exigences Système
-- **OS** : Windows 10 (Build 19041+) / Windows 11.
-- **Architecture** : x86-64 (Natif).
-- **Privilèges** : **Élévation UAC requise**. Sans droits administrateur, les fonctions `NtSetSystemInformation` (Purge Standby) seront désactivées par le noyau.
+![ram1 - Fenetre principale RamSentinel](rm1.png)
 
-### Utilisation en Ligne de Commande (CLI)
-Bien que l'interface soit WPF, RamSentinel supporte l'injection de paramètres pour les environnements de maintenance (à venir dans la v1.1).
+ram1 montre l'interface principale complete de l'application.
 
----
+L'interface est organisee en trois zones principales.
 
-## ❓ F.A.Q : Comprendre la RAM "Standby" vs "Libre"
+### 1. Panneau lateral gauche
 
-**L'analogie du Bureau :**
+Il affiche :
 
-1.  **RAM Libre (Free List)** : C'est la surface de votre bureau qui est **totalement vide**. Vous pouvez y poser un nouveau dossier instantanément sans aucune friction.
-2.  **RAM Standby (Cache)** : Ce sont des dossiers que vous avez consultés plus tôt. Windows les laisse sur un coin du bureau "au cas où". 
-    *   *L'avantage* : Si vous rouvrez le même dossier, il est déjà là (chargement ultra-rapide).
-    *   *Le problème* : Si vous voulez poser un tout nouvel objet très lourd (un jeu AAA, un logiciel de montage), Windows doit d'abord **pousser les vieux dossiers** pour faire de la place. 
+- les informations systeme
+- l'etat de la pression memoire
+- les boutons d'action globale
+- la configuration VirusTotal
+- les alertes et evenements recents
 
-Ce petit temps nécessaire pour "pousser les dossiers" s'appelle la **latence de réallocation**. C'est elle qui cause les micro-saccades (*stuttering*) en plein jeu. **RamSentinel** vide ce coin du bureau de manière chirurgicale pour que votre système trouve toujours une surface vide et prête.
+### 2. Liste centrale des processus
 
----
+Elle affiche les processus avec notamment :
 
-## 🛠️ Dépannage (Troubleshooting)
+- PID
+- nom
+- consommation memoire
+- score de dangerosite
+- indicateurs de fuite ou de suspicion
 
-### 1. Privilège `SeDebugPrivilege` ou `SeProfileSingleProcess` manquant
-RamSentinel tente d'élever ses propres privilèges au démarrage. Si vous voyez une erreur liée aux privilèges :
-*   **Solution** : Assurez-vous que l'exécutable est lancé via "Exécuter en tant qu'administrateur".
-*   **Cause** : Certains antivirus ou politiques de groupe (GPO) restrictives peuvent bloquer l'acquisition de privilèges de débogage, empêchant le "Trim" des processus système.
+Un clic droit sur une ligne ouvre le menu complet d'analyse du processus selectionne.
 
-### 2. "Erreur d'initialisation NTAPI"
-Si les fonctions de purge Standby ne répondent pas :
-*   **Cause** : Vous utilisez peut-être une version de Windows familiale avec des restrictions sur les appels `NtSetSystemInformation`.
-*   **Solution** : Vérifiez que votre build Windows est supérieure à 19041.
+### 3. Barre d'etat
 
-### 3. Faux positifs Antivirus (SmartScreen)
-En raison de sa nature (Single-File EXE) et de ses requêtes de droits Administrateur pour manipuler la mémoire :
-*   **Solution** : Ajoutez `RamSentinel.exe` aux exclusions de votre antivirus ou cliquez sur "Informations complémentaires" > "Exécuter quand même" sur l'écran bleu SmartScreen.
+Elle affiche les messages de resultat, les erreurs d'acces et les confirmations d'action.
 
 ---
 
-## 📜 Licence, Auteur et Éthique
+## Actions globales
 
-**Développeur Principal** : ps81frt  
-**Dépôt Officiel** : github.com/ps81frt/RAMSentinel
+### Rafraichir
 
-### Licence MIT
-Copyright (c) 2024 ps81frt
+Met a jour les informations systeme et la liste des processus.
 
-### Engagement de Transparence
-Contrairement aux outils "bloatware", RamSentinel n'effectue aucune télémétrie cachée. 
-1. **Zéro Collecte** : Aucune donnée personnelle n'est transmise.
-2. **Code Ouvert** : La logique d'optimisation est auditable sur le dépôt source.
-3. **Sécurité d'Abord** : Un cooldown de 30 secondes protège le VMM contre les purges excessives (Thrashing).
+Utiliser cette action pour :
+
+- actualiser la RAM utilisee
+- recalculer le score de pression
+- rafraichir les indicateurs de fuite
+- recuperer les derniers evenements
+
+### Optimiser Smart
+
+Declenche une optimisation adaptee a la pression memoire mesuree.
+
+Selon le contexte, l'application peut enchainer :
+
+- trim des working sets
+- flush de pages modifiees
+- purge de la standby list
+
+### Trim Top
+
+Reduit l'empreinte memoire des processus les plus consommateurs.
+
+### Trim Selection
+
+Reduit l'empreinte memoire du processus selectionne.
+
+### Vider Standby
+
+Libere la memoire de cache systeme recupable.
+
+Cette action demande en pratique des privileges eleves.
+
+### Gaming Mode
+
+Applique une optimisation globale rapide orientee reduction de pression memoire.
+
+### Export historique CSV
+
+Exporte l'historique recent de pression memoire au format CSV.
 
 ---
-*RamSentinel — L'ingénierie de précision au service de votre système.*
+
+## Clic droit sur un processus
+
+![ram2 - Menu clic droit avec sous-menus](ram2.png)
+
+ram2 montre le menu clic droit et ses sous-menus (inspection memoire, processus et threads, securite et integrite, reseau et forensic, actions rapides).
+
+Le menu contextuel regroupe les fonctions d'inspection, de securite et d'export.
+
+### Actions rapides
+
+- Rapport HTML individuel
+- Rapport HTML systeme
+- Verifier sur VirusTotal
+- Ouvrir l'emplacement
+- Rechercher en ligne
+- Forcer le Trim
+
+### Inspection memoire
+
+Permet d'ouvrir les vues de detail sur :
+
+- memory map
+- working set detail
+- modules charges
+- fichiers mappes
+- heap
+- commit vs private
+- page faults
+
+### Processus et threads
+
+Permet d'acceder a :
+
+- suspendre / reprendre
+- minidump
+- handles
+- threads
+- priorite
+- affinite CPU
+
+### Securite et integrite
+
+Permet d'afficher :
+
+- authenticode
+- token de securite
+- arbre de processus
+- connexions reseau
+- detection d'injection
+- anti-hollowing
+
+### Intelligence
+
+Permet d'ouvrir :
+
+- score de dangerosite
+- detection de fuite memoire
+- historique working set
+
+---
+
+## VirusTotal
+
+La verification VirusTotal est optionnelle.
+
+### Configurer la cle API
+
+1. Aller dans la section `VIRUSTOTAL (API)`.
+2. Saisir la cle API dans le champ prevu.
+3. Cliquer sur `Enregistrer` pour sauvegarder la cle dans un fichier.
+
+Autre possibilite :
+
+- cliquer sur `📂` pour charger une cle depuis un fichier existant
+
+### Utiliser VirusTotal
+
+1. Selectionner un processus.
+2. Faire un clic droit.
+3. Choisir `Verifier sur VirusTotal`.
+
+L'application calcule le hash SHA-256 du binaire local, puis interroge l'API VirusTotal si la cle est disponible.
+
+### Effacer la cle apres usage
+
+Le bouton `🗑️` supprime :
+
+- le fichier contenant la cle
+- le fichier pointeur `vt_api_path.txt`
+- la cle conservee en memoire par l'application
+
+Cette operation est recommandee avant de rendre une machine cliente.
+
+---
+
+## Rapports HTML
+
+Deux rapports HTML sont disponibles dans le menu contextuel.
+
+### Rapport individuel
+
+Ce rapport porte sur le processus selectionne.
+
+Il peut contenir :
+
+- resume du processus
+- score de dangerosite
+- modules
+- threads
+- reseau
+- informations de securite
+- token et privileges
+- details de dump si disponibles
+
+### Rapport systeme
+
+Ce rapport porte sur l'etat global de la machine.
+
+Il peut contenir :
+
+- KPI memoire
+- pression globale
+- top processus RAM
+- resume systeme
+
+### Emplacement des rapports
+
+Les fichiers HTML sont ecrits dans :
+
+`%LOCALAPPDATA%\RamSentinel\Reports\`
+
+Ils s'ouvrent automatiquement dans le navigateur par defaut.
+
+---
+
+## Fichiers crees sur la machine
+
+Meme en mode portable, l'application peut ecrire des donnees dans le profil utilisateur Windows.
+
+### Emplacements utilises
+
+| Emplacement | Contenu |
+|---|---|
+| `%LOCALAPPDATA%\RamSentinel\Logs\` | Journaux d'execution |
+| `%LOCALAPPDATA%\RamSentinel\Reports\` | Rapports HTML |
+| `%LOCALAPPDATA%\RamSentinel\vt_api_path.txt` | Pointeur vers le fichier de cle VirusTotal |
+
+---
+
+## Nettoyage apres intervention
+
+Pour ne pas laisser de traces sur une machine cliente :
+
+1. Supprimer la cle VirusTotal avec le bouton `🗑️` si elle a ete configuree.
+2. Fermer RamSentinel.
+3. Supprimer le dossier `%LOCALAPPDATA%\RamSentinel\` si les logs et rapports ne doivent pas etre conserves.
+
+---
+
+## Verification d'integrite
+
+Pour verifier que l'executable n'a pas ete modifie :
+
+```powershell
+certutil -hashfile .\RamSentinel.exe SHA256
+```
+
+Comparer le resultat avec le contenu de `SHA256.txt` ou `RamSentinel.exe.sha256`.
+
+---
+
+## Messages frequents
+
+### `Acces refuse`
+
+Le processus cible ou l'action demandee necessite des privileges plus eleves.
+
+### `Chemin d'acces invalide`
+
+Le binaire du processus n'est pas accessible, ou Windows ne renvoie pas de chemin exploitable.
+
+### VirusTotal indisponible
+
+Verifier :
+
+- la presence de la cle API
+- l'acces Internet
+- les limites du compte VirusTotal utilise
+
+---
+
+## Support
+
+- Depot : https://github.com/ps81frt/RAMSentinel
+- Releases : https://github.com/ps81frt/RAMSentinel/releases
+- Issues : https://github.com/ps81frt/RAMSentinel/issues
+
+---
+
+Version : 1.1.1
+Licence : MIT
+Auteur : ps81frt
