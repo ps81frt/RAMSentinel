@@ -1,6 +1,6 @@
 # RamSentinel v1.1.0
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue) ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-1.1.0-blue) ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Guide utilisateur
 
