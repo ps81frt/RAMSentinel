@@ -4,7 +4,7 @@
 
 ## Guide utilisateur
 
-Ce document est le manuel utilisateur de l'edition portable v1.1.1.
+Ce document est le manuel utilisateur de l'edition portable v1.1.0
 Il decrit l'utilisation de l'executable, les actions disponibles, les fichiers crees sur la machine et la procedure de nettoyage apres intervention.
 
 ---
