@@ -51,8 +51,7 @@ C:.
     Readme.md
     SHA256.txt
 ```
-
-Le numéro de série du volume est 5A30-2DAA.
+
 
 ---
 
