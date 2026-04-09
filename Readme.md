@@ -1,11 +1,29 @@
-# RamSentinel v1.1.0
+# RamSentinel v2.0
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue) ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-2.0-blue) ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen) ![License](https://img.shields.io/badge/license-MIT-green)
+
+## Table des matières
+
+- [Guide utilisateur](#guide-utilisateur)
+- [Contenu du dossier portable](#contenu-du-dossier-portable)
+- [Structure du dossier](#structure-du-dossier)
+- [Prerequis](#prerequis)
+- [Demarrage](#demarrage)
+- [Interface](#interface)
+- [Actions globales](#actions-globales)
+- [Clic droit sur un processus](#clic-droit-sur-un-processus)
+- [VirusTotal](#virustotal)
+- [Rapports HTML](#rapports-html)
+- [Fichiers crees sur la machine](#fichiers-crees-sur-la-machine)
+- [Nettoyage apres intervention](#nettoyage-apres-intervention)
+- [Verification d'integrite](#verification-dintegrite)
+- [Messages frequents](#messages-frequents)
+- [Support](#support)
 
 ## Guide utilisateur
 
-Ce document est le manuel utilisateur de l'edition portable v1.1.0
-Il decrit l'utilisation de l'executable, les actions disponibles, les fichiers crees sur la machine et la procedure de nettoyage apres intervention.
+Ce document est le manuel utilisateur pour la distribution portable de RamSentinel v2.0.
+Il décrit l'utilisation de l'exécutable, les actions disponibles, les fichiers écrits sur la machine, et la procédure de nettoyage après utilisation.
 
 ---
 
@@ -21,6 +39,20 @@ Le dossier portable contient normalement :
 | `Readme.md` | Manuel utilisateur |
 
 Le dossier portable ne contient pas le code source ni les fichiers de build.
+
+---
+
+## Structure du dossier
+
+```
+C:.
+    RamSentinel.exe
+    RamSentinel.exe.sha256
+    Readme.md
+    SHA256.txt
+```
+
+Le numéro de série du volume est 5A30-2DAA.
 
 ---
 
@@ -101,13 +133,13 @@ Utiliser cette action pour :
 
 ### Optimiser Smart
 
-Declenche une optimisation adaptee a la pression memoire mesuree.
+L'option lance une séquence d'optimisation basée sur l'état actuel de la mémoire et la pression détectée.
 
-Selon le contexte, l'application peut enchainer :
+Selon les privilèges disponibles, elle peut effectuer :
 
-- trim des working sets
-- flush de pages modifiees
-- purge de la standby list
+- trim des working sets de process sélectionnés,
+- flush des pages modifiées pour libérer des pages modifiées vers Standby/Free,
+- purge de la Standby List via l'API native si elle est accessible.
 
 ### Trim Top
 
@@ -162,6 +194,16 @@ Permet d'ouvrir les vues de detail sur :
 - commit vs private
 - page faults
 
+### Détails techniques des inspections CR
+
+- **CR-01 Carte mémoire** : énumération des régions mémoire du processus avec `VirtualQueryEx`, collecte de `BaseAddress`, `RegionSize`, `State`, `Type`, `Protection` et chemin du fichier mappé si disponible.
+- **CR-02 Working Set détaillé** : lecture de `PROCESS_MEMORY_COUNTERS_EX` et catégorisation des pages via `QueryWorkingSetEx` pour produire les valeurs `Private`, `Shareable` et `Shared`.
+- **CR-03 Modules/DLL chargés** : énumération des modules chargés dans le processus, affichage de l'adresse de base, de la taille, du chemin et des informations de signature Authenticode.
+- **CR-04 Fichiers mappés** : détection des régions de type `MEM_MAPPED`, récupération des chemins mappés avec `GetMappedFileName`.
+- **CR-05 Segments Heap** : approximation des segments de type privé et commit pour représenter les zones de mémoire liées aux allocations de processus.
+- **CR-06 Commit vs Private** : comparaison des octets committés (`CommitCharge`) et des octets privés à partir des compteurs mémoire et des régions de processus.
+- **CR-07 Page faults** : affichage des compteurs de fautes de page, avec distinction entre fautes lentes et rapides lorsque les données sont disponibles.
+
 ### Processus et threads
 
 Permet d'acceder a :
@@ -172,6 +214,15 @@ Permet d'acceder a :
 - threads
 - priorite
 - affinite CPU
+
+### Détails techniques Processus et threads
+
+- **CR-08 Suspendre/Reprendre** : utilise `NtSuspendProcess` et `NtResumeProcess` pour changer l'état d'exécution du processus.
+- **CR-09 MiniDump** : création de mini ou full dump via `MiniDumpWriteDump`.
+- **CR-10 Handles** : énumération des handles ouverts par le processus et affichage du nombre total.
+- **CR-11 Threads** : liste des threads du processus avec TID, priorité, temps CPU utilisateur et noyau.
+- **CR-12 Priorite** : modification de la classe de priorité du processus (`SetPriorityClass`).
+- **CR-13 Affinite CPU** : configuration du masque d'affinité du processus pour limiter ou autoriser des cœurs spécifiques.
 
 ### Securite et integrite
 
@@ -184,6 +235,16 @@ Permet d'afficher :
 - detection d'injection
 - anti-hollowing
 
+### Détails techniques Sécurité et intégrité
+
+- **CR-14 Token sécurité** : lecture des informations de token du processus et des privilèges activés.
+- **CR-15 Authenticode** : vérification de la signature du module via `WinVerifyTrust`.
+- **CR-16 Arbre de processus** : construction de la hiérarchie parent/enfant à partir des informations de processus.
+- **CR-17 Connexions réseau** : liste des connexions TCP/UDP associées au PID, avec adresses locales et distantes.
+- **CR-20 Détection de fuite mémoire** : suivi de la croissance du working set et des allocations pour identifications de fuites potentielles.
+- **CR-24 Détection injection DLL** : comparaison du contenu mémoire et du contenu disque pour repérer des modules injectés ou modifiés.
+- **CR-25 Anti-Hollowing** : comparaison des images en mémoire et sur disque pour détecter les incohérences de sections.
+
 ### Intelligence
 
 Permet d'ouvrir :
@@ -191,6 +252,14 @@ Permet d'ouvrir :
 - score de dangerosite
 - detection de fuite memoire
 - historique working set
+
+### Détails techniques Intelligence
+
+- **CR-19 Score de dangerosité** : calcul d'un score composite basé sur des facteurs tels que les modules unsigned, l'activité réseau, la croissance du working set et les caractéristiques du processus.
+- **CR-20 Détection de fuite mémoire** : monitoring des valeurs de mémoire du processus sur le temps pour détecter une augmentation anormale.
+- **CR-21 Historique Working Set** : enregistrement périodique des valeurs de working set pour construire une courbe temporelle.
+- **CR-22 Export Forensic** : création de rapports JSON et HTML à partir des données collectées pour les processus ou l'état système, écrits dans `%LOCALAPPDATA%\RamSentinel\Reports\`.
+- **CR-23 Mode Gaming** : optimisation appliquée en lot, de type trim / purge ciblés, destinée à réduire la pression mémoire globale.
 
 ---
 
@@ -332,6 +401,8 @@ Verifier :
 
 ---
 
-Version : 1.1.1
+Version : 2.0
 Licence : MIT
 Auteur : ps81frt
+
+
