@@ -408,7 +408,7 @@ Verifier :
 ---
 
 Version : 2.0
-Licence : MIT
+Licence : GPL
 Auteur : ps81frt
 
 
