@@ -1,6 +1,12 @@
 # RamSentinel v2.0
+![GitHub release](https://img.shields.io/github/v/release/ps81frt/RAMSentinel)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen)
+![License](https://img.shields.io/github/license/ps81frt/RAMSentinel)
+[![Download](https://img.shields.io/badge/Download-latest-blue)](https://github.com/ps81frt/RAMSentinel/releases/latest)
+![Downloads](https://img.shields.io/github/downloads/ps81frt/RAMSentinel/latest/total)
+![Stars](https://img.shields.io/github/stars/ps81frt/RAMSentinel)
+![Views](https://komarev.com/ghpvc/?username=ps81frt&repo=RAMSentinel)
 
-![Version](https://img.shields.io/badge/version-2.0-blue) ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Table des matières
 
@@ -51,7 +57,8 @@ C:.
     Readme.md
     SHA256.txt
 ```
-
+
+
 
 ---
 
