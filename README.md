@@ -53,16 +53,8 @@ Historique complet disponible dans [CHANGELOG.md](https://github.com/ps81frt/ram
 
 RamSentinel est une application Windows de surveillance et d'optimisation de la mémoire RAM orientée usage avancé — techniciens, power users, analystes SOC et intervenants forensiques. Elle expose en temps réel l'état complet du sous-système mémoire Windows : pression, standby, processus suspects, fuites, injections de DLL, hollowing de processus, connexions réseau par PID, et bien plus.
 
-L'application est construite en deux couches complémentaires : une interface WPF C# (.NET 8) qui gère toute la logique d'affichage, de navigation et d'export, et un moteur natif C++ (`RamSentinelCore.dll`) qui expose les APIs Windows bas niveau (NtQuerySystemInformation, EmptyStandbyList, VirtualQueryEx, QueryWorkingSetEx, etc.) que .NET ne peut pas appeler directement.
-
 Le projet ne fait **aucune modification système permanente** — aucun service installé, aucune entrée de registre créée. Il peut fonctionner en mode portable (`.exe` auto-contenu) sans installation.
 
-| Composant | Rôle | Langage |
-|-----------|------|---------|
-| `App/` | Interface WPF : vues, ViewModels, services, convertisseurs, thèmes | C# / XAML |
-| `Core/` | Moteur natif : APIs Windows bas niveau, P/Invoke, opérations kernel | C++ (DLL x64) |
-| `Assets/` | Icônes, ressources visuelles | — |
-| Scripts `build-*.ps1` / `buildNET.ps1` | Automation du build (Debug, Release, Portable) | PowerShell |
 
 ### Cas d'usage typiques
 
