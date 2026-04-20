@@ -1,12 +1,24 @@
 # RamSentinel
 
 > Outil professionnel d'analyse, d'optimisation et de forensique mémoire RAM pour Windows — interface WPF native (.NET 8) avec moteur natif C++ haute performance.  
-> Auteur : [ps81frt](https://github.com/ps81frt) · Dépôt source : [github.com/ps81frt/ramsentinel_source](https://github.com/ps81frt/ramsentinel_source)
-
+Auteur : [ps81frt](https://github.com/ps81frt) · Dépôt source : [github.com/ps81frt/ramsentinel_source](https://github.com/ps81frt/ramsentinel_source) · Release : [latest](https://github.com/ps81frt/RAMSentinel/releases/latest)
 ---
 
 ## 📊 Statut
 
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen)
+![.NET](https://img.shields.io/badge/.NET-8.0--windows-purple)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+![Release](https://img.shields.io/github/v/release/ps81frt/RAMSentinel)
+![Downloads](https://img.shields.io/github/downloads/ps81frt/RAMSentinel/total)
+[![Download](https://img.shields.io/badge/Download-latest-blue)](https://github.com/ps81frt/RAMSentinel/releases/latest)
+
+![Stars](https://img.shields.io/github/stars/ps81frt/ramsentinel_source)
+![Last commit](https://img.shields.io/github/last-commit/ps81frt/ramsentinel_source)
+
+
+<!-- 
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-brightgreen)
 ![Language C#](https://img.shields.io/badge/C%23-94.8%25-blueviolet)
 ![Language C++](https://img.shields.io/badge/C%2B%2B-0.9%25-blue)
@@ -22,12 +34,12 @@
 ![Repo size](https://img.shields.io/github/repo-size/ps81frt/ramsentinel_source)
 ![Views](https://komarev.com/ghpvc/?username=ps81frt&repo=ramsentinel_source)
 
-<!-- Décommenter après la première release publiée :
+<!-- Décommenter après la première release publiée :-->
 ![Release](https://img.shields.io/github/v/release/ps81frt/ramsentinel_source)
 ![Downloads](https://img.shields.io/github/downloads/ps81frt/ramsentinel_source/total)
 [![Download](https://img.shields.io/badge/Download-latest-blue)](https://github.com/ps81frt/ramsentinel_source/releases/latest)
--->
 
+-->
 ---
 
 ## Version
