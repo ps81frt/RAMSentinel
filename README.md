@@ -34,7 +34,7 @@ Auteur : [ps81frt](https://github.com/ps81frt) · Dépôt source : [github.com/p
 ![Repo size](https://img.shields.io/github/repo-size/ps81frt/ramsentinel_source)
 ![Views](https://komarev.com/ghpvc/?username=ps81frt&repo=ramsentinel_source)
 
-<!-- Décommenter après la première release publiée :-->
+<!-- Décommenter après la première release publiée :
 ![Release](https://img.shields.io/github/v/release/ps81frt/ramsentinel_source)
 ![Downloads](https://img.shields.io/github/downloads/ps81frt/ramsentinel_source/total)
 [![Download](https://img.shields.io/badge/Download-latest-blue)](https://github.com/ps81frt/ramsentinel_source/releases/latest)
